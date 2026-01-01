@@ -7,11 +7,15 @@ export default function Dashboard() {
 
   useEffect(() => {
     (async () => {
-      const t = await fetch('http://localhost:4000/transactions');
+      const token = localStorage.getItem('token');
+      if (!token) { window.location.href = '/login'; return; }
+      const headers = { Authorization: `Bearer ${token}` };
+      const t = await fetch('http://localhost:4000/transactions', { headers });
+      if (t.status === 401) { window.location.href = '/login'; return; }
       setTransactions(await t.json());
-      const b = await fetch('http://localhost:4000/budgets');
+      const b = await fetch('http://localhost:4000/budgets', { headers });
       setBudgets(await b.json());
-      const f = await fetch('http://localhost:4000/forecast');
+      const f = await fetch('http://localhost:4000/forecast', { headers });
       setForecast(await f.json());
     })();
   }, []);

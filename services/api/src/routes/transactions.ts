@@ -1,58 +1,49 @@
 import { FastifyPluginAsync } from 'fastify';
-import { promises as fs } from 'fs';
-import { join } from 'path';
-import { randomUUID } from 'crypto';
-
-const STORE = join(__dirname, '..', 'data', 'transactions.json');
-
-async function readStore() {
-  try { const raw = await fs.readFile(STORE, 'utf-8'); return JSON.parse(raw || '{}'); } catch (e) { await fs.writeFile(STORE, JSON.stringify({}), 'utf-8'); return {}; }
-}
-async function writeStore(data: any) { await fs.writeFile(STORE, JSON.stringify(data, null, 2), 'utf-8'); }
+import prisma from '../lib/prisma';
 
 const tx: FastifyPluginAsync = async (fastify) => {
-  fastify.get('/', async () => {
-    const s = await readStore();
-    return Object.values(s);
+  // require auth for all transaction routes
+  fastify.addHook('preHandler', async (request, reply) => {
+    try { await request.jwtVerify(); } catch (err) { return reply.status(401).send({ error: 'not_authorized' }); }
+  });
+
+  fastify.get('/', async (request, reply) => {
+    const payload = request.user as any;
+    const items = await prisma.transaction.findMany({ where: { userId: payload.userId }, orderBy: { date: 'desc' } });
+    return items;
   });
 
   fastify.post('/', async (request, reply) => {
     const body = request.body as any;
     if (typeof body?.amount !== 'number' || !body?.date) return reply.status(400).send({ error: 'amount_and_date_required' });
-    const id = randomUUID();
-    const obj = { id, amount: body.amount, date: body.date, name: body.name || '', category: body.category || 'uncategorized' };
-    const s = await readStore();
-    s[id] = obj;
-    await writeStore(s);
-    return obj;
+    const payload = request.user as any;
+    const created = await prisma.transaction.create({ data: { amount: body.amount, date: body.date, name: body.name || '', category: body.category || 'uncategorized', userId: payload.userId } });
+    return created;
   });
 
   fastify.post('/import_csv', async (request, reply) => {
-    // accept raw CSV in body for simple import: date,amount,name,category
     const body = request.body as any;
     const csv = body?.csv;
     if (!csv) return reply.status(400).send({ error: 'csv_required' });
     const lines = (csv as string).split('\n').map(l => l.trim()).filter(Boolean);
     const added: any[] = [];
-    const s = await readStore();
+    const payload = request.user as any;
     for (const ln of lines) {
       const [date, amountStr, name, category] = ln.split(',').map(x => x?.trim());
       const amount = Number(amountStr);
       if (isNaN(amount)) continue;
-      const id = randomUUID();
-      const obj = { id, amount, date, name: name||'', category: category||'uncategorized' };
-      s[id] = obj;
+      const obj = await prisma.transaction.create({ data: { amount, date, name: name||'', category: category||'uncategorized', userId: payload.userId } });
       added.push(obj);
     }
-    await writeStore(s);
     return { added };
   });
 
   fastify.delete('/:id', async (request, reply) => {
     const id = (request.params as any).id;
-    const s = await readStore();
-    delete s[id];
-    await writeStore(s);
+    const payload = request.user as any;
+    const existing = await prisma.transaction.findUnique({ where: { id } });
+    if (!existing || existing.userId !== payload.userId) return reply.status(404).send({ error: 'not_found' });
+    await prisma.transaction.delete({ where: { id } });
     return { ok: true };
   });
 };

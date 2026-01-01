@@ -25,3 +25,25 @@ model PlaidItem {
   userId          String
   createdAt       DateTime @default(now())
 }
+
+model Budget {
+  id        String   @id @default(uuid())
+  name      String
+  limit     Float
+  category  String?
+  recurring Boolean  @default(false)
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime @default(now())
+}
+
+model Transaction {
+  id        String   @id @default(uuid())
+  amount    Float
+  date      String
+  name      String?
+  category  String?
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime @default(now())
+}
