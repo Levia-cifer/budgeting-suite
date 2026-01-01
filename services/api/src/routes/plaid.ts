@@ -23,11 +23,21 @@ const plaidRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.post('/exchange_public_token', async (request, reply) => {
+    try {
+      await request.jwtVerify();
+    } catch (err) {
+      return reply.status(401).send({ error: 'not_authorized' });
+    }
     const body = request.body as any;
     const public_token = body?.public_token;
     if (!public_token) return reply.status(400).send({ error: 'public_token required' });
     try {
       const res = await exchangePublicToken(public_token);
+      const payload = (request.user as any) || {};
+      const userId = payload.userId;
+      // save to DB
+      const prisma = require('../lib/prisma').default;
+      await prisma.plaidItem.create({ data: { itemId: res.item_id, accessToken: res.access_token, userId, institutionName: body?.institution_name || null } });
       const store = await readStore();
       store[res.item_id] = res;
       await writeStore(store);
