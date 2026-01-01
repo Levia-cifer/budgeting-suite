@@ -1,0 +1,19 @@
+{
+  "name": "services-api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "ts-node-dev --respawn src/index.ts"
+  },
+  "dependencies": {
+    "fastify": "^4.20.0",
+    "fastify-cors": "^7.0.0",
+    "dotenv": "^16.0.0",
+    "axios": "^1.4.0"
+  },
+  "devDependencies": {
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.1.0",
+    "@types/node": "^20.0.0"
+  }
+}
