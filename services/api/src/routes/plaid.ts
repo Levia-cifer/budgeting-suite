@@ -1,17 +1,46 @@
 import { FastifyPluginAsync } from 'fastify';
+import { createLinkToken, exchangePublicToken } from '../lib/plaidClient';
+import { promises as fs } from 'fs';
+import { join } from 'path';
+
+const PLAID_STORE = join(__dirname, '..', 'data', 'plaid.json');
+
+async function readStore() {
+  try { const raw = await fs.readFile(PLAID_STORE, 'utf-8'); return JSON.parse(raw || '{}'); } catch (e) { await fs.writeFile(PLAID_STORE, JSON.stringify({}), 'utf-8'); return {}; }
+}
+
+async function writeStore(data: any) { await fs.writeFile(PLAID_STORE, JSON.stringify(data, null, 2), 'utf-8'); }
 
 const plaidRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post('/create_link_token', async (request, reply) => {
-    // TODO: Replace with Plaid API call. For now return a sandbox stub used for local dev.
-    return { link_token: 'test-link-token', environment: process.env.PLAID_ENV || 'sandbox' };
+    try {
+      const token = await createLinkToken();
+      return token;
+    } catch (err) {
+      fastify.log.error(err);
+      return reply.status(500).send({ error: 'link_token_error' });
+    }
   });
 
   fastify.post('/exchange_public_token', async (request, reply) => {
     const body = request.body as any;
     const public_token = body?.public_token;
     if (!public_token) return reply.status(400).send({ error: 'public_token required' });
-    // TODO: Exchange public_token with Plaid for access_token and store securely
-    return { access_token: 'access-sandbox-token', item_id: 'sandbox-item-id' };
+    try {
+      const res = await exchangePublicToken(public_token);
+      const store = await readStore();
+      store[res.item_id] = res;
+      await writeStore(store);
+      return res;
+    } catch (err) {
+      fastify.log.error(err);
+      return reply.status(500).send({ error: 'exchange_failed' });
+    }
+  });
+
+  fastify.get('/items', async (request, reply) => {
+    const store = await readStore();
+    return store;
   });
 };
 
