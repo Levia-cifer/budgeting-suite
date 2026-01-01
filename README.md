@@ -24,8 +24,12 @@ Setup & running (quick):
 2. From repo root: `pnpm install`
 3. Copy `services/api/.env.example` to `services/api/.env` and set Plaid credentials if you have them (optional for sandbox).
 4. Start backend: `pnpm --filter services/api dev` (will run on port 4000)
-5. Start web app: `pnpm --filter apps/web dev` (Next.js on port 3000)
-6. Start mobile (Expo): `pnpm --filter apps/mobile start`
+5. Run Prisma steps (inside `services/api`):
+   - `pnpm run prisma:generate` (generate client)
+   - `pnpm run prisma:migrate` (runs migration and creates `dev.db`)
+   - `pnpm run prisma:seed` (seed sample user, budgets, transactions)
+6. Start web app: `pnpm --filter apps/web dev` (Next.js on port 3000)
+7. Start mobile (Expo): `pnpm --filter apps/mobile start`
 
 Making the mobile app installable on your phone:
 - For a quick install, use `expo build:android` (with EAS) or `eas build -p android` / `eas build -p ios` after configuring an Expo account.
