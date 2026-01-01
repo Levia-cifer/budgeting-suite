@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, Button, SafeAreaView, TouchableOpacity, ScrollView } from 'react-native';
 import PlaidLinkScreen from './PlaidLinkScreen';
+import NativePlaid from './NativePlaid';
 import Dashboard from './Dashboard';
 
 export default function App() {
@@ -33,7 +34,11 @@ export default function App() {
         </ScrollView>
       )}
 
-      {screen === 'plaid' && <PlaidLinkScreen />}
+      {screen === 'plaid' && <>
+        <PlaidLinkScreen />
+        <View style={{ height: 12 }} />
+        <NativePlaid />
+      </>}
       {screen === 'dashboard' && <Dashboard />}
     </SafeAreaView>
   );

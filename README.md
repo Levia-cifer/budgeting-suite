@@ -30,6 +30,13 @@ Setup & running (quick):
 Making the mobile app installable on your phone:
 - For a quick install, use `expo build:android` (with EAS) or `eas build -p android` / `eas build -p ios` after configuring an Expo account.
 - The app manifest is in `apps/mobile/app.json`. Customize `android.package` / `ios.bundleIdentifier` before building.
-- Note: To use Plaid in a mobile app and have it fully native, you'll need to add `react-native-plaid-link-sdk` and perform an EAS build (it requires native modules). For the sandbox/demo, the web demo is easier to test in browser for now.
+- Note: To use Plaid in a mobile app and have it fully native, we added `react-native-plaid-link-sdk` and configured the Expo plugin. To produce an installable app you must use EAS:
+
+  1. Install EAS CLI: `npm install -g eas-cli` and login with `eas login` (create an Expo account if you don't have one).
+  2. Configure credentials for Android/iOS (follow Expo docs).
+  3. Run `pnpm --filter apps/mobile run eas:build:android` to build an APK/AAB for Android, or `pnpm --filter apps/mobile run eas:build:ios` for iOS (requires Apple account).
+  4. If you're testing with an Android emulator and your API runs on localhost, use `10.0.2.2` (Android) or set `extra.apiUrl` accordingly.
+
+- Plaid / secrets: For native Plaid in production, set `PLAID_CLIENT_ID`, `PLAID_SECRET`, and `PLAID_ENV` in the server (`services/api/.env`) and store sensitive production secrets in GitHub/EAS secrets rather than in the codebase.
 
 License: MIT

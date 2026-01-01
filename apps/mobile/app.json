@@ -10,6 +10,12 @@
     },
     "ios": {
       "bundleIdentifier": "com.budgetingsuite.app"
+    },
+    "plugins": [
+      "react-native-plaid-link-sdk"
+    ],
+    "extra": {
+      "apiUrl": "http://localhost:4000"
     }
   }
 }
